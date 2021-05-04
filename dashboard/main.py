@@ -33,6 +33,24 @@ def show_course(course_id):
     return course_schema.jsonify(course_to_show)
 
 
+# This will let us to UPDATE one course
+@app.route('/courses/<int:course_id>', methods=["PUT"])
+def course_update(course_id):
+    course_to_update = session.query(Course).get(course_id)
+
+    for i in request.json.keys():
+        if i == 'title':
+            course_to_update.title = request.json[i]
+        elif i == 'start_date':
+            course_to_update.start_date = request.json[i]
+        elif i == 'end_date':
+            course_to_update.end_date = request.json[i]
+        elif i == 'amount':
+            course_to_update.amount = request.json[i]
+
+    session.commit()
+    return course_schema.jsonify(course_to_update)
+
 
 
 
