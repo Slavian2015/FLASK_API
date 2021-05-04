@@ -52,6 +52,14 @@ def course_update(course_id):
     return course_schema.jsonify(course_to_update)
 
 
+@app.route('/courses/<int:course_id>', methods=["DELETE"])
+def user_delete(course_id):
+    course_to_delete = session.query(Course).filter_by(id=course_id).one()
+    session.delete(course_to_delete)
+    session.commit()
+    return course_schema.jsonify(course_to_delete)
+
+
 
 
 
