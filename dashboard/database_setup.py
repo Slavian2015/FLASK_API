@@ -1,13 +1,8 @@
-import sys
 # for creating the mapper code
-from sqlalchemy import Column, ForeignKey, Integer, String, DateTime
-import os
+from sqlalchemy import Column, ForeignKey, Integer, String, Date
 
 # for configuration and class code
 from sqlalchemy.ext.declarative import declarative_base
-
-# for creating foreign key relationship between the tables
-from sqlalchemy.orm import relationship
 
 # for configuration
 from sqlalchemy import create_engine
@@ -18,14 +13,13 @@ Base = declarative_base()
 ma = Marshmallow()
 
 
-# we'll add classes here
 class Course(Base):
     __tablename__ = 'course'
 
     id = Column('course_id', Integer, primary_key=True)
     title = Column(String(250), nullable=False)
-    start_date = Column(DateTime, nullable=False)
-    end_date = Column(DateTime, nullable=False)
+    start_date = Column(Date, nullable=False)
+    end_date = Column(Date, nullable=False)
     amount = Column(Integer, nullable=False)
 
 

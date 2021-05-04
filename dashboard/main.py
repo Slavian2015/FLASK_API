@@ -5,7 +5,7 @@ app = Flask(__name__)
 from sqlalchemy import create_engine, exc
 from sqlalchemy.orm import sessionmaker
 from database_setup import Base, Course, CourseSchema
-from datetime import datetime, timedelta
+import datetime
 
 # Connect to Database and create database session
 engine = create_engine('sqlite:///usr/local/WB/data/course-collection.db')
@@ -17,8 +17,6 @@ course_schema = CourseSchema()
 courses_schema = CourseSchema(many=True)
 
 
-# landing page that will display all the books in our database
-# This function operate on the Read operation.
 @app.route('/')
 @app.route('/courses')
 def show_courses():
@@ -34,11 +32,22 @@ def show_course(course_id):
     return course_schema.jsonify(course_to_show)
 
 
-# This will let us FIND one course by Title
-@app.route('/courses/find', methods=['GET'])
-def show_course(course_id):
-    course_to_show = session.query(Course).get(course_id)
-    return course_schema.jsonify(course_to_show)
+# This will let us FIND one course by Title / start_date / end_date
+@app.route('/courses/find', methods=['POST'])
+def find_course():
+    if "title" in request.json.keys():
+        course_to_find = session.query(Course).filter_by(title=request.json["title"]).first()
+        return course_schema.jsonify(course_to_find)
+    elif "start_date" in request.json.keys():
+        year, month, day = request.json['start_date'].split('-')
+        course_to_find = session.query(Course).filter(Course.start_date >= datetime.date(int(year), int(month), int(day)))
+        return courses_schema.jsonify(course_to_find)
+    elif "end_date" in request.json.keys():
+        year, month, day = request.json['end_date'].split('-')
+        course_to_find = session.query(Course).filter(Course.end_date >= datetime.date(int(year), int(month), int(day)))
+        return courses_schema.jsonify(course_to_find)
+    else:
+        return {"error": "No title to find"}
 
 
 # This will let us to UPDATE one course
@@ -80,8 +89,8 @@ def new_course():
     if all(item in request.json.keys() for item in ["title", "start_date", "end_date", "amount"]):
         try:
             new_course_item = Course(title=request.json['title'],
-                                     start_date=datetime.strptime(request.json['start_date'], format_date),
-                                     end_date=datetime.strptime(request.json['end_date'], format_date),
+                                     start_date=datetime.datetime.strptime(request.json['start_date'], format_date),
+                                     end_date=datetime.datetime.strptime(request.json['end_date'], format_date),
                                      amount=request.json['amount'])
             session.add(new_course_item)
             session.commit()
