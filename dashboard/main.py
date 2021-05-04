@@ -2,9 +2,10 @@ from flask import Flask, render_template, request, redirect, url_for, jsonify
 
 app = Flask(__name__)
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, exc
 from sqlalchemy.orm import sessionmaker
 from database_setup import Base, Course, CourseSchema
+from datetime import datetime, timedelta
 
 # Connect to Database and create database session
 engine = create_engine('sqlite:///usr/local/WB/data/course-collection.db')
@@ -33,6 +34,13 @@ def show_course(course_id):
     return course_schema.jsonify(course_to_show)
 
 
+# This will let us FIND one course by Title
+@app.route('/courses/find', methods=['GET'])
+def show_course(course_id):
+    course_to_show = session.query(Course).get(course_id)
+    return course_schema.jsonify(course_to_show)
+
+
 # This will let us to UPDATE one course
 @app.route('/courses/<int:course_id>', methods=["PUT"])
 def course_update(course_id):
@@ -52,64 +60,38 @@ def course_update(course_id):
     return course_schema.jsonify(course_to_update)
 
 
+# This will let us DELETE course by Id
 @app.route('/courses/<int:course_id>', methods=["DELETE"])
 def user_delete(course_id):
-    course_to_delete = session.query(Course).filter_by(id=course_id).one()
-    session.delete(course_to_delete)
-    session.commit()
-    return course_schema.jsonify(course_to_delete)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# This will let us Create a new book and save it in our database
-@app.route('/courses/new/', methods=['GET', 'POST'])
-def newCourse():
-    if request.method == 'POST':
-        newCourse = Course(title=request.form['name'], author=request.form['author'], genre=request.form['genre'])
-        session.add(newCourse)
+    try:
+        course_to_delete = session.query(Course).filter_by(id=course_id).one()
+        session.delete(course_to_delete)
         session.commit()
-        return str("NEW")
+        return course_schema.jsonify(course_to_delete)
+    except exc.SQLAlchemyError:
+        return {"error": "No such Id"}
+
+
+# This will let us Create a new course and save it in our database
+@app.route('/courses/new', methods=['POST'])
+def new_course():
+
+    format_date = "%Y-%m-%d"
+    if all(item in request.json.keys() for item in ["title", "start_date", "end_date", "amount"]):
+        try:
+            new_course_item = Course(title=request.json['title'],
+                                     start_date=datetime.strptime(request.json['start_date'], format_date),
+                                     end_date=datetime.strptime(request.json['end_date'], format_date),
+                                     amount=request.json['amount'])
+            session.add(new_course_item)
+            session.commit()
+            courses = session.query(Course).all()
+            result = courses_schema.dump(courses)
+            return jsonify(result)
+        except exc.SQLAlchemyError:
+            return {"error": "Incorrect value. Please try another"}
     else:
-        return str("NEW")
-
-
-# This will let us Update our books and save it in our database
-@app.route("/courses/<int:course_id>/edit/", methods=['GET', 'POST'])
-def editBook(course_id):
-    editedCourse = session.query(Course).filter_by(id=course_id).one()
-    if request.method == 'POST':
-        if request.form['name']:
-            editedCourse.title = request.form['name']
-            return str("ONE")
-    else:
-        return str("ONE")
-
-
-# This will let us Delete our book
-@app.route('/courses/<int:course_id>/delete/', methods=['GET', 'POST'])
-def deleteBook(course_id):
-    courseToDelete = session.query(Course).filter_by(id=course_id).one()
-    if request.method == 'POST':
-        session.delete(courseToDelete)
-        session.commit()
-        return str("delete")
-    else:
-        return str("delete")
+        return {"error": "Not all values are present"}
 
 
 if __name__ == '__main__':
