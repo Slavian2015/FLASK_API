@@ -1,0 +1,11 @@
+version: '3.3'
+services:
+  flask_api:
+    container_name: flask_api
+    restart: always
+    build: .docker/dashboard
+    volumes:
+      - ./.docker/data:/usr/local/WB/data
+      - ./dashboard:/usr/local/WB/dashboard
+    ports:
+      - "5151:5151"

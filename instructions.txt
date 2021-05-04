@@ -1,0 +1,8 @@
+sudo docker-compose build
+sudo docker-compose up -d
+
+sudo docker exec -ti flask_api bash
+sudo docker exec -u root flask_api bash -c "python /usr/local/WB/dashboard/main.py"
+
+python /usr/local/WB/dashboard/database_setup.py
+python /usr/local/WB/dashboard/test.py
